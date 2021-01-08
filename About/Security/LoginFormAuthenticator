@@ -33,6 +33,8 @@ public function supports(Request $request) {
 }
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 // DEUXIEME EBAUCHE
 // ON FILTRE AU NIVEAU OU L'ERREUR APPARAIT UNE PREMIERE FOIS
@@ -66,8 +68,6 @@ public function getUser($credentials, UserProviderInterface $userProvider) {
     } catch (UsernameNotFoundException $e) {
         throw new AuthenticationException ("Mail erroné");
     }
-
-    return true;
 }
 
 public function checkCredentials($credentials, UserInterface $user) {
@@ -85,4 +85,15 @@ public function checkCredentials($credentials, UserInterface $user) {
     }
     
     return true;
+}
+
+public function onAuthenticationFailure(Request $request, AuthenticationException $exception) {
+
+    $request->attributes->set(Security::AUTHENTICATION_ERROR, $exception);
+    $request->attributes->set(Security::LAST_USERNAME, $request->request->get('login')['email'] ?? '');
+}
+
+public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $providerKey) {
+
+    return new RedirectResponse("/");
 }
