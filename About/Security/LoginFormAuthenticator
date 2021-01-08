@@ -6,6 +6,12 @@
  * MySubject => Les test de conformité sur la route et sur la méthode http ne suffisent pas.
  */
  
+// PREMIERE EBAUCHE
+// ON S'ASSURE QUE LES PARAMETRES EXISTENT BIEN
+// ON FILTRE DIRECTEMENT DANS SUPPORTS
+// ON EVITE AINSI DES ERREURS SERVEURS 500
+// QUI NE SONT PAS CAPTURES PAR LA METHODE ONAUTHENTICATIONFAILURE
+
 public function supports(Request $request) {
 
     // Test de conformité sur la route et sur la méthode http
@@ -25,3 +31,4 @@ public function supports(Request $request) {
 
     return true;
 }
+
