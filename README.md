@@ -7,5 +7,7 @@ Je ne peux que vous conseiller de vous laissez tenter par sa rigueur et sa péda
 En attendant, je partage quelques ressources ici destinés aux autres étudiants de la formation.
 
 Pout tout retour, bastienrulat@gmail.com si c'est copieux !
+
 Ou via Twitter @BastienRulat si c'est concis !
+
 ou ici même si vous le souhaitez ;-)
