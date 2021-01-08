@@ -32,3 +32,57 @@ public function supports(Request $request) {
     return true;
 }
 
+
+
+// DEUXIEME EBAUCHE
+// ON FILTRE AU NIVEAU OU L'ERREUR APPARAIT UNE PREMIERE FOIS
+// ON LEVE LES EXCEPTIONS POUR RECUPERE NOS MESSAGES DANS NOTRE FORMULAIRE
+
+
+public function supports(Request $request) {
+    
+    // Test de conformité de la route et de la méthode http
+    return $request->attributes->get('_route') === 'security_login' && $request->isMethod('POST');
+}
+
+public function getCredentials(Request $request) {
+
+    // Contrairement à get qui renvoit null,
+    // all renvoit [] si login n'xiste pas
+    // Du coup pas la peine de tester l'ErrorException
+    // N.B. Cet usage de get est déprécié.
+
+    return $request->request->all('login');
+}
+
+public function getUser($credentials, UserProviderInterface $userProvider) {
+
+    // Esquive d'une ErrorException 1 premiere fois
+    try {
+        if (!isset($credentials['email'])) throw new ErrorException();
+        return $userProvider->loadUserByUsername($credentials['email']);
+    } catch (ErrorException $e) {
+        throw new AuthenticationException ("Mail manqaant");
+    } catch (UsernameNotFoundException $e) {
+        throw new AuthenticationException ("Mail erroné");
+    }
+
+    return true;
+}
+
+public function checkCredentials($credentials, UserInterface $user) {
+
+    // Esquive d'une ErrorException 1 deuxieme fois
+    try {
+        if (!isset($credentials['password'])) throw new ErrorException();
+    } catch (ErrorException $e) {
+        throw new AuthenticationException("Mdp manquant");
+    }    
+    
+    $isValid = $this->encoder->isPasswordValid($user, $credentials['password']);
+    if (!$isValid) {
+        throw new AuthenticationException ("Mdp erronné");
+    }
+    
+    return true;
+}
