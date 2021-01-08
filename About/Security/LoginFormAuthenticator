@@ -1,0 +1,27 @@
+/**
+ * Formation => Symfony 5 : Le guide complet par Lior Chamla
+ * Section   => La sécurité : authentification
+ * Chapter   => Les échecs possibles pendant l'authentification
+ *
+ * MySubject => Les test de conformité sur la route et sur la méthode http ne suffisent pas.
+ */
+ 
+public function supports(Request $request) {
+
+    // Test de conformité sur la route et sur la méthode http
+    if ($request->attributes->get('_route') !== 'security_login' && !$request->isMethod('POST')) return false;
+    
+    // Test de conformité du form login
+    $param = $request->request->getIterator('parameters')->key();
+    if (is_null($param) || $param !== "login") return false;
+    $login = $request->request->getIterator('parameters')->current();
+    
+    // Test d'existence des credentials, un cas mal géré par défaut dans notre LoginFormAuthenticator
+    if (!isset(
+        $login['email'],
+        $login['password'],
+        $login['_token']
+    )) return false;
+
+    return true;
+}
