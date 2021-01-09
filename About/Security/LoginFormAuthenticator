@@ -123,6 +123,8 @@ public function onAuthenticationFailure(Request $request, AuthenticationExceptio
     $request->attributes->set(Security::LAST_USERNAME, $request->request->get('login')['email'] ?? '');
 }
 
+
+
 public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $providerKey) {
 
     return new RedirectResponse("/");
@@ -138,4 +140,48 @@ public function supportsRememberMe()
 {
     dump('supportRemember');
     // todo
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+// QUATRIEME EBAUCHE
+// ON PREND UN EAPPROCHE PLUS PREVENANTE ET AU LIEU D'ATTENDRE LES ERREURS,
+// ON ANTICIPE
+// INJECTONS 2 DANS 3 POUR TESTER L ANON EXISTENCE DES DONNEES DE NOTRE FORMULAIRE
+
+On remplace donc juste supports.
+La seule différence que l'on note :
+- on test login
+- on test token
+==> On accepte plus silencieusement un formulaire corrompu
+==> En retournant des false, un user connecté peut toujours revenir sur login, ce qui n'a aucun sens.
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// CINQUIEME EBAUCHE
+// DANS SUPPORTS, ON REMPLACE NOS DEUX DERNIERS RETURN FALSES (LE PREMIER EST CENSE) PAR DES LEVEES D'EXCEPTIONS.
+// EN THEORIE, ON PEUT ALLEGER DU COUP NOS TRY CATCH PLUS BAS DESSOUS DU COUP MAIS LAISSONS POUR L'INSTANT CELA DE COTE.
+// AJOUTER LES EXCEPTIONS IMPLIQUE QUE L'USER CONNECTE NE PEUT PLUS SE LOGGER
+// ET START ET APPELLE; J'ENQUETE !
+
+public function supports(Request $request) {
+
+    // Test de conformité sur la route et sur la méthode http
+    if ($request->attributes->get('_route') !== 'security_login' && !$request->isMethod('POST')) return false;
+    
+    // Test de conformité du form login
+    $login = $request->request->all('login');
+    if (empty($login)) throw new AuthenticationException("le formulaire est corrompu");
+    
+    // Test d'existence des credentials, un cas mal géré par défaut dans notre LoginFormAuthenticator
+    if (!isset(
+        $login['email'],
+        $login['password'],
+        $login['_token']
+    )) throw new AuthenticationException("le formulaire est corrompu");
+    
+    return true;
 }
