@@ -15,7 +15,7 @@
 public function supports(Request $request) {
 
     // Test de conformité sur la route et sur la méthode http
-    if ($request->attributes->get('_route') !== 'security_login' && !$request->isMethod('POST')) return false;
+    if ($request->attributes->get('_route') !== 'security_login' || !$request->isMethod('POST')) return false;
     
     // Test de conformité du form login
     $param = $request->request->getIterator('parameters')->key();
@@ -40,7 +40,7 @@ public function supports(Request $request) {
 public function supports(Request $request) {
 
     // Test de conformité sur la route et sur la méthode http
-    if ($request->attributes->get('_route') !== 'security_login' && !$request->isMethod('POST')) return false;
+    if ($request->attributes->get('_route') !== 'security_login' || !$request->isMethod('POST')) return false;
 
     // Test de conformité du form login
     $login = $request->request->all('login');
@@ -156,7 +156,6 @@ La seule différence que l'on note :
 - on test login
 - on test token
 ==> On accepte plus silencieusement un formulaire corrompu
-==> En retournant des false, un user connecté peut toujours revenir sur login, ce qui n'a aucun sens.
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -164,12 +163,6 @@ La seule différence que l'on note :
 // CINQUIEME EBAUCHE
 // DANS SUPPORTS, ON REMPLACE NOS DEUX DERNIERS RETURN FALSES (LE PREMIER EST CENSE) PAR DES LEVEES D'EXCEPTIONS.
 // EN THEORIE, ON PEUT ALLEGER DU COUP NOS TRY CATCH PLUS BAS DESSOUS DU COUP MAIS LAISSONS POUR L'INSTANT CELA DE COTE.
-// AJOUTER LES EXCEPTIONS IMPLIQUE QUE L'USER CONNECTE NE PEUT PLUS SE LOGGER
-// ET START ET APPELLE; J'ENQUETE !
-
-ON obtient quand on essait de revenir sur le formulaire de log :
-The "App\Security\LoginFormAuthenticator::start()" method must return a Response object ("null" returned).
-Avec ce code dans supports :
 
 public function supports(Request $request) {
 
@@ -189,13 +182,5 @@ public function supports(Request $request) {
     
     return true;
 }
-
-Du coup on rajoute simplment dans start à l'image de la success methode
-
-public function start(Request $request, AuthenticationException $authException = null) {
-    return new RedirectResponse("/");
-}
-
-ET nous voila interdit de form sans se logout. Hmm Hmm. Que s'est'il passé ? A suivre 😉
 
 
