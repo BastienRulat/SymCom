@@ -167,6 +167,10 @@ La seule différence que l'on note :
 // AJOUTER LES EXCEPTIONS IMPLIQUE QUE L'USER CONNECTE NE PEUT PLUS SE LOGGER
 // ET START ET APPELLE; J'ENQUETE !
 
+ON obtient quand on essait de revenir sur le formulaire de log :
+The "App\Security\LoginFormAuthenticator::start()" method must return a Response object ("null" returned).
+Avec ce code dans supports :
+
 public function supports(Request $request) {
 
     // Test de conformité sur la route et sur la méthode http
@@ -185,3 +189,13 @@ public function supports(Request $request) {
     
     return true;
 }
+
+Du coup on rajoute simplment dans start à l'image de la success methode
+
+public function start(Request $request, AuthenticationException $authException = null) {
+    return new RedirectResponse("/");
+}
+
+ET nous voila interdit de form sans se logout. Hmm Hmm. Que s'est'il passé ? A suivre 😉
+
+
