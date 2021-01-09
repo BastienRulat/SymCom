@@ -12,175 +12,69 @@
 // ON EVITE AINSI DES ERREURS SERVEURS 500
 // QUI NE SONT PAS CAPTURES PAR LA METHODE ONAUTHENTICATIONFAILURE
 
-public function supports(Request $request) {
+class LoginFormAuthenticator extends AbstractGuardAuthenticator {
 
-    // Test de conformité sur la route et sur la méthode http
-    if ($request->attributes->get('_route') !== 'security_login' || !$request->isMethod('POST')) return false;
-    
-    // Test de conformité du form login
-    $param = $request->request->getIterator('parameters')->key();
-    if (is_null($param) || $param !== "login") return false;
-    $login = $request->request->getIterator('parameters')->current();
-    
-    // Test d'existence des credentials
-    // Ect-ce un cas mal géré par défaut dans notre LoginFormAuthenticator améliorable par Symfony ?
-    if (!isset(
-        $login['email'],
-        $login['password'],
-        $login['_token']
-    )) return false;
+    protected $encoder;
 
-    return true;
-}
-
-// DEUXIEME EBAUCHE
-// ON DECOUVRE ALL
-// BYE ITERATOR = CODE PLUS PROPRE
-
-public function supports(Request $request) {
-
-    // Test de conformité sur la route et sur la méthode http
-    if ($request->attributes->get('_route') !== 'security_login' || !$request->isMethod('POST')) return false;
-
-    // Test de conformité du form login
-    $login = $request->request->all('login');
-    if (empty($login)) return false;
-
-    // Test d'existence des credentials
-    if (!isset(
-        $login['email'],
-        $login['password'],
-        $login['_token']
-    )) return false;
-
-    return true;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-// TROISIEME EBAUCHE
-// ON FILTRE AU NIVEAU OU L'ERREUR APPARAIT UNE PREMIERE FOIS
-// ON LEVE LES EXCEPTIONS POUR RECUPERE NOS MESSAGES DANS NOTRE FORMULAIRE
-
-// Petit apparté -> PB : Un user connecté peut encore revenir sur le login.
-// Qu'est-ce qui fait la dif sous le capot avec l'exemple d'après ? A suivre.
-
-// Par contre vu que supprimer le token du form ne genere jamais d'erreur,
-// avec cette approche on dit rien si on nous envoit un form foireux : pas tip top...
-// Mais au mois zero erreur serveur 500 deja
-
-
-public function supports(Request $request) {
-    
-    // Test de conformité de la route et de la méthode http
-    return $request->attributes->get('_route') === 'security_login' && $request->isMethod('POST');
-}
-
-public function getCredentials(Request $request) {
-
-    // Contrairement à get qui renvoit null,
-    // all renvoit [] si login n'xiste pas
-    // Du coup pas la peine de tester l'ErrorException
-    // N.B. Cet usage de get est déprécié.
-
-    return $request->request->all('login');
-}
-
-public function getUser($credentials, UserProviderInterface $userProvider) {
-
-    // Esquive d'une ErrorException 1 premiere fois
-    try {
-        if (!isset($credentials['email'])) throw new ErrorException();
-        return $userProvider->loadUserByUsername($credentials['email']);
-    } catch (ErrorException $e) {
-        throw new AuthenticationException ("Mail manqaant");
-    } catch (UsernameNotFoundException $e) {
-        throw new AuthenticationException ("Mail erroné");
+    public function __construct(UserPasswordEncoderInterface $encoder)
+    {
+        $this->encoder = $encoder;
     }
-}
 
-public function checkCredentials($credentials, UserInterface $user) {
+    public function supports(Request $request) {
 
-    // Esquive d'une ErrorException 1 deuxieme fois
-    try {
-        if (!isset($credentials['password'])) throw new ErrorException();
-    } catch (ErrorException $e) {
-        throw new AuthenticationException("Mdp manquant");
-    }    
-    
-    $isValid = $this->encoder->isPasswordValid($user, $credentials['password']);
-    if (!$isValid) {
-        throw new AuthenticationException ("Mdp erronné");
+        return $request->attributes->get('_route') === 'security_login'
+            && $request->isMethod('POST');
     }
     
-    return true;
-}
-
-public function onAuthenticationFailure(Request $request, AuthenticationException $exception) {
-
-    $request->attributes->set(Security::AUTHENTICATION_ERROR, $exception);
-    $request->attributes->set(Security::LAST_USERNAME, $request->request->get('login')['email'] ?? '');
-}
-
-
-
-public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $providerKey) {
-
-    return new RedirectResponse("/");
-}
-
-public function start(Request $request, AuthenticationException $authException = null)
-{
-    // todo
-    dump ("start");
-}
-
-public function supportsRememberMe()
-{
-    dump('supportRemember');
-    // todo
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-// QUATRIEME EBAUCHE
-// ON PREND UN EAPPROCHE PLUS PREVENANTE ET AU LIEU D'ATTENDRE LES ERREURS,
-// ON ANTICIPE
-// INJECTONS 2 DANS 3 POUR TESTER L ANON EXISTENCE DES DONNEES DE NOTRE FORMULAIRE
-
-On remplace donc juste supports.
-La seule différence que l'on note :
-- on test login
-- on test token
-==> On accepte plus silencieusement un formulaire corrompu
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// CINQUIEME EBAUCHE
-// DANS SUPPORTS, ON REMPLACE NOS DEUX DERNIERS RETURN FALSES (LE PREMIER EST CENSE) PAR DES LEVEES D'EXCEPTIONS.
-// EN THEORIE, ON PEUT ALLEGER DU COUP NOS TRY CATCH PLUS BAS DESSOUS DU COUP MAIS LAISSONS POUR L'INSTANT CELA DE COTE.
-
-public function supports(Request $request) {
-
-    // Test de conformité sur la route et sur la méthode http
-    if ($request->attributes->get('_route') !== 'security_login' || !$request->isMethod('POST')) return false;
+    public function getCredentials(Request $request) {
     
-    // Test de conformité du form login
-    $login = $request->request->all('login');
-    if (empty($login)) throw new AuthenticationException("le formulaire est corrompu");
+        $login = $request->request->all('login');
+        if (empty($login)) throw new AuthenticationException("le formulaire est corrompu");
+        
+        if (!isset(
+            $login['email'],
+            $login['password'],
+            $login['_token']
+        ))  throw new AuthenticationException("le formulaire est incomplet");
+        
+        return $request->request->all('login');
+    }
     
-    // Test d'existence des credentials, un cas mal géré par défaut dans notre LoginFormAuthenticator
-    if (!isset(
-        $login['email'],
-        $login['password'],
-        $login['_token']
-    )) throw new AuthenticationException("le formulaire est corrompu");
-    
-    return true;
-}
+    public function getUser($credentials, UserProviderInterface $userProvider) {
 
+        try 
+            { return $userProvider->loadUserByUsername($credentials['email']); }
+        catch
+            (UsernameNotFoundException $e)
+            { throw new AuthenticationException ("Mail erroné"); }
+    }
+    
+    public function checkCredentials($credentials, UserInterface $user) {    
+        
+        if ($this->encoder->isPasswordValid($user, $credentials['password'])) return true;
+        else throw new AuthenticationException ("Mdp erroné");
+    }
+    
+    public function onAuthenticationFailure(Request $request, AuthenticationException $exception) {
+    
+        $request->attributes->set(Security::AUTHENTICATION_ERROR, $exception);
+        $request->attributes->set(Security::LAST_USERNAME, $request->request->get('login')['email'] ?? '');
+    }
+    
+    public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $providerKey) {
+    
+        return new RedirectResponse("/");
+    }
+
+    public function start(Request $request, AuthenticationException $authException = null) {
+
+        return new RedirectResponse("/");
+    }
+
+    public function supportsRememberMe() {
+
+        return false; // En attendant l'utilité potentielle
+    }
+}
 
