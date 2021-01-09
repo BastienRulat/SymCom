@@ -167,7 +167,7 @@ La seule différence que l'on note :
 public function supports(Request $request) {
 
     // Test de conformité sur la route et sur la méthode http
-    if ($request->attributes->get('_route') !== 'security_login' && !$request->isMethod('POST')) return false;
+    if ($request->attributes->get('_route') !== 'security_login' || !$request->isMethod('POST')) return false;
     
     // Test de conformité du form login
     $login = $request->request->all('login');
