@@ -63,7 +63,12 @@ public function supports(Request $request) {
 // ON FILTRE AU NIVEAU OU L'ERREUR APPARAIT UNE PREMIERE FOIS
 // ON LEVE LES EXCEPTIONS POUR RECUPERE NOS MESSAGES DANS NOTRE FORMULAIRE
 
-// Petit apparté -> PB : Un user connecté peut revenir sur le login. Pourquoi ?
+// Petit apparté -> PB : Un user connecté peut encore revenir sur le login.
+// Qu'est-ce qui fait la dif sous le capot avec l'exemple d'après ? A suivre.
+
+// Par contre vu que supprimer le token du form ne genere jamais d'erreur,
+// avec cette approche on dit rien si on nous envoit un form foireux : pas tip top...
+// Mais au mois zero erreur serveur 500 deja
 
 
 public function supports(Request $request) {
@@ -121,4 +126,16 @@ public function onAuthenticationFailure(Request $request, AuthenticationExceptio
 public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $providerKey) {
 
     return new RedirectResponse("/");
+}
+
+public function start(Request $request, AuthenticationException $authException = null)
+{
+    // todo
+    dump ("start");
+}
+
+public function supportsRememberMe()
+{
+    dump('supportRemember');
+    // todo
 }
