@@ -22,7 +22,8 @@ public function supports(Request $request) {
     if (is_null($param) || $param !== "login") return false;
     $login = $request->request->getIterator('parameters')->current();
     
-    // Test d'existence des credentials, un cas mal géré par défaut dans notre LoginFormAuthenticator
+    // Test d'existence des credentials
+    // Ect-ce un cas mal géré par défaut dans notre LoginFormAuthenticator améliorable par Symfony ?
     if (!isset(
         $login['email'],
         $login['password'],
@@ -32,13 +33,37 @@ public function supports(Request $request) {
     return true;
 }
 
+// DEUXIEME EBAUCHE
+// ON DECOUVRE ALL
+// BYE ITERATOR = CODE PLUS PROPRE
+
+public function supports(Request $request) {
+
+    // Test de conformité sur la route et sur la méthode http
+    if ($request->attributes->get('_route') !== 'security_login' && !$request->isMethod('POST')) return false;
+
+    // Test de conformité du form login
+    $login = $request->request->all('login');
+    if (empty($login)) return false;
+
+    // Test d'existence des credentials
+    if (!isset(
+        $login['email'],
+        $login['password'],
+        $login['_token']
+    )) return false;
+
+    return true;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-// DEUXIEME EBAUCHE
+// TROISIEME EBAUCHE
 // ON FILTRE AU NIVEAU OU L'ERREUR APPARAIT UNE PREMIERE FOIS
 // ON LEVE LES EXCEPTIONS POUR RECUPERE NOS MESSAGES DANS NOTRE FORMULAIRE
+
+// Petit apparté -> PB : Un user connecté peut revenir sur le login. Pourquoi ?
 
 
 public function supports(Request $request) {
