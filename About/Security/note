@@ -1,0 +1,16 @@
+Opton 1
+Template filtrage sans Validator.
+Si je veux détailler les erreurs je peux utiliser un try catch
+
+try {
+    if ( is_null( $category = $categoryRepository->find($id) ))
+    throw $this->createNotFoundException( "La catégorie n'a pas été trouvée" );
+    }
+catch 
+    ( ErrorException $e ) 
+    { throw $this->createNotFoundException( "Identifiant de catégorie manquant !" ); }
+    
+Option 2
+Plus limpide.
+if ( ! @is_numeric( $id ) || ! $product = $categoryRepository->find( $id )) 
+    throw $this->createNotFoundException( "AUcune catégorie associée à l'identifiant passé !" );
