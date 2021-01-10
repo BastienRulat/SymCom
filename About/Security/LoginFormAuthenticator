@@ -7,69 +7,69 @@
  */
  
 // PREMIERE EBAUCHE
-// ON S'ASSURE QUE LES PARAMETRES EXISTENT BIEN
-// ON FILTRE DIRECTEMENT DANS SUPPORTS
+// ON S'ASSURE EGALEMENT QUE LES PARAMETRES EXISTENT BIEN !
+// ON FILTRE DIRECTEMENT DANS GETCREDENTIALS
 // ON EVITE AINSI DES ERREURS SERVEURS 500
-// QUI NE SONT PAS CAPTURES PAR LA METHODE ONAUTHENTICATIONFAILURE
+// QUI NE SONT PAS RECONDUITES A LA METHODE ONAUTHENTICATIONFAILURE
 
 class LoginFormAuthenticator extends AbstractGuardAuthenticator {
 
     protected $encoder;
 
-    public function __construct(UserPasswordEncoderInterface $encoder)
-    {
+    public function __construct( UserPasswordEncoderInterface $encoder ) {
+    
         $this->encoder = $encoder;
     }
 
-    public function supports(Request $request) {
+    public function supports( Request $request ) {
 
-        return $request->attributes->get('_route') === 'security_login'
-            && $request->isMethod('POST');
+        return $request->attributes->get( '_route' ) === 'security_login'
+            && $request->isMethod( 'POST' );
     }
     
-    public function getCredentials(Request $request) {
+    public function getCredentials( Request $request ) {
     
-        $login = $request->request->all('login');
-        if (empty($login)) throw new AuthenticationException("le formulaire est corrompu");
+        $login = $request->request->all( 'login' );
+        if ( empty( $login ) ) throw new AuthenticationException( "le formulaire est corrompu" );
         
-        if (!isset(
-            $login['email'],
-            $login['password'],
-            $login['_token']
-        ))  throw new AuthenticationException("le formulaire est incomplet");
+        if ( !isset(
+             $login[ 'email'    ],
+             $login[ 'password' ],
+             $login[ '_token'   ]
+        ))   throw new AuthenticationException( "le formulaire est incomplet" );
         
-        return $request->request->all('login');
+        return $request->request->all( 'login' );
     }
     
-    public function getUser($credentials, UserProviderInterface $userProvider) {
+    public function getUser( $credentials, UserProviderInterface $userProvider ) {
 
         try 
-            { return $userProvider->loadUserByUsername($credentials['email']); }
+            { return $userProvider->loadUserByUsername( $credentials['email'] ); }
         catch
-            (UsernameNotFoundException $e)
-            { throw new AuthenticationException ("Mail erroné"); }
+            ( UsernameNotFoundException $e )
+            { throw new AuthenticationException ( "Mail erroné" ); }
     }
     
-    public function checkCredentials($credentials, UserInterface $user) {    
+    public function checkCredentials( $credentials, UserInterface $user ) {    
         
-        if ($this->encoder->isPasswordValid($user, $credentials['password'])) return true;
-        else throw new AuthenticationException ("Mdp erroné");
+        if ( $this->encoder->isPasswordValid( $user, $credentials[ 'password' ] )) return true;
+        else throw new AuthenticationException ( "Mdp erroné" );
     }
     
-    public function onAuthenticationFailure(Request $request, AuthenticationException $exception) {
+    public function onAuthenticationFailure( Request $request, AuthenticationException $exception ) {
     
-        $request->attributes->set(Security::AUTHENTICATION_ERROR, $exception);
-        $request->attributes->set(Security::LAST_USERNAME, $request->request->get('login')['email'] ?? '');
+        $request->attributes->set( Security::AUTHENTICATION_ERROR, $exception );
+        $request->attributes->set( Security::LAST_USERNAME, $request->request->get( 'login' )[ 'email' ] ?? '' );
     }
     
-    public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $providerKey) {
+    public function onAuthenticationSuccess( Request $request, TokenInterface $token, string $providerKey ) {
     
-        return new RedirectResponse("/");
+        return new RedirectResponse( "/" );
     }
 
-    public function start(Request $request, AuthenticationException $authException = null) {
+    public function start( Request $request, AuthenticationException $authException = null ) {
 
-        return new RedirectResponse("/");
+        return new RedirectResponse( "/" );
     }
 
     public function supportsRememberMe() {
